@@ -2,7 +2,7 @@
 
 **gapAR** es una herramienta de Business Intelligence (Single Page Application) diseñada para equipos de Supply Chain y E-commerce. Permite auditar la salud del catálogo, proyectar quiebres de stock y detectar capital inmovilizado procesando reportes de ventas sin necesidad de un backend.
 
-[[🚀 Ver Live Demo]((https://shishoftw.github.io/gapAR-Inventory-Intelligence-Suite/))](https://shishoftw.github.io/gapAR-Inventory-Intelligence-Suite/)
+[[🚀 Ver Live Demo]((https://shishoftw.github.io/gapAR-Inventory-Intelligence-Suite/))]
 
 ## 🎯 El Problema de Negocio
 Las empresas de retail suelen tomar decisiones de compras basadas en la intuición o mirando solo la facturación (dejando de lado el nivel de stock y la velocidad de rotación). Esto genera dos problemas carísimos:
