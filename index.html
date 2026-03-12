@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>gapAR | Inventory Intelligence</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app-wrapper">
+    <nav class="top-nav">
+        <div class="nav-content">
+            <div class="brand-block">
+                <div class="logo">gap<span>AR</span></div>
+                <span class="brand-badge">Inventory Intelligence</span>
+            </div>
+            <div class="nav-summary">Diagnóstico de stock, foco comercial y prioridades operativas</div>
+        </div>
+    </nav>
+
+    <main class="content">
+        <section class="hero-upload card">
+            <div class="hero-head compact">
+                <div>
+                    <span class="eyebrow">Control de stock accionable</span>
+                    <h1>Diagnóstico de inventario</h1>
+                    <p>Detectá qué reponer, congelar o revisar con hasta 3 reportes mensuales.</p>
+                </div>
+                <div class="hero-metrics compact-metrics">
+                    <div class="hero-metric">
+                        <strong>1–3 reportes</strong>
+                        <span>Consolidación automática</span>
+                    </div>
+                    <div class="hero-metric">
+                        <strong>ABC / Pareto</strong>
+                        <span>Prioridad comercial</span>
+                    </div>
+                    <div class="hero-metric">
+                        <strong>Forecast 30d</strong>
+                        <span>Foco táctico</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="file-grid">
+                <div class="file-input-wrapper" data-slot="1">
+                    <input type="file" id="file1" accept=".xlsx,.xls,.csv">
+                    <label for="file1">
+                        <span class="file-kicker">Reporte</span>
+                        <strong>Mes 1</strong>
+                        <small class="file-meta">Sin archivo seleccionado</small>
+                    </label>
+                </div>
+                <div class="file-input-wrapper" data-slot="2">
+                    <input type="file" id="file2" accept=".xlsx,.xls,.csv">
+                    <label for="file2">
+                        <span class="file-kicker">Reporte</span>
+                        <strong>Mes 2</strong>
+                        <small class="file-meta">Sin archivo seleccionado</small>
+                    </label>
+                </div>
+                <div class="file-input-wrapper" data-slot="3">
+                    <input type="file" id="file3" accept=".xlsx,.xls,.csv">
+                    <label for="file3">
+                        <span class="file-kicker">Reporte</span>
+                        <strong>Mes 3</strong>
+                        <small class="file-meta">Sin archivo seleccionado</small>
+                    </label>
+                </div>
+            </div>
+
+            <div class="hero-actions">
+                <button id="runBtn" class="btn-primary" type="button">Ejecutar diagnóstico</button>
+                <span class="hero-note">Columnas sugeridas: SKU, PRODUCTO, VENTAS, FACTURACION TOTAL y STOCK.</span>
+            </div>
+        </section>
+
+        <section id="feedbackBanner" class="feedback-banner hidden" aria-live="polite"></section>
+
+        <div id="dashboard" class="dashboard-stack hidden">
+            <section class="toolbar card">
+                <div class="toolbar-main">
+                    <div class="toolbar-search">
+                        <label for="searchInput">Buscar SKU o producto</label>
+                        <input type="search" id="searchInput" placeholder="Ej. notebook, impresora, SKU60357">
+                    </div>
+                    <div class="toolbar-filters">
+                        <div class="field-group">
+                            <label for="statusFilter">Estado</label>
+                            <select id="statusFilter">
+                                <option value="all">Todos</option>
+                                <option value="QUIEBRE">Quiebre</option>
+                                <option value="SOBRE STOCK">Sobre stock</option>
+                                <option value="SALUDABLE">Saludable</option>
+                            </select>
+                        </div>
+                        <div class="field-group">
+                            <label for="classFilter">Clase</label>
+                            <select id="classFilter">
+                                <option value="all">Todas</option>
+                                <option value="A">Clase A</option>
+                                <option value="B">Clase B</option>
+                                <option value="C">Clase C</option>
+                            </select>
+                        </div>
+                        <div class="field-group">
+                            <label for="sortSelect">Ordenar por</label>
+                            <select id="sortSelect">
+                                <option value="revenue_desc">Mayor facturación</option>
+                                <option value="forecast_desc">Mayor forecast</option>
+                                <option value="coverage_asc">Menor cobertura</option>
+                                <option value="coverage_desc">Mayor cobertura</option>
+                                <option value="stock_desc">Mayor stock</option>
+                                <option value="name_asc">Nombre A-Z</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="toolbar-secondary">
+                    <div id="quickFilters" class="chip-group">
+                        <button type="button" class="chip active" data-quick-filter="all">Vista total</button>
+                        <button type="button" class="chip" data-quick-filter="criticalA">Comprar ya</button>
+                        <button type="button" class="chip" data-quick-filter="riskA">Blindar clase A</button>
+                        <button type="button" class="chip" data-quick-filter="overstock">Congelar compra</button>
+                        <button type="button" class="chip" data-quick-filter="stagnant">Depurar catálogo</button>
+                    </div>
+                    <div class="toolbar-actions-inline">
+                        <span id="resultsCounter" class="results-counter">0 resultados</span>
+                        <button id="exportBtn" class="btn-secondary" type="button">Exportar vista</button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="summary-strip five-cols">
+                <article class="mini-stat card-mini">
+                    <span class="mini-label">Quiebres</span>
+                    <strong id="sum-quiebres">0</strong>
+                    <small>SKUs sin stock actual</small>
+                </article>
+                <article class="mini-stat card-mini">
+                    <span class="mini-label">Clase A en riesgo</span>
+                    <strong id="sum-risk-a">0</strong>
+                    <small>Cobertura menor a 20 días</small>
+                </article>
+                <article class="mini-stat card-mini">
+                    <span class="mini-label">Exceso de cobertura</span>
+                    <strong id="sum-overstock">0</strong>
+                    <small>Inventario por encima de 6 meses</small>
+                </article>
+                <article class="mini-stat card-mini">
+                    <span class="mini-label">Sin rotación</span>
+                    <strong id="sum-stagnant">0</strong>
+                    <small>Stock sin ventas</small>
+                </article>
+                <article class="mini-stat card-mini">
+                    <span class="mini-label">Oportunidades</span>
+                    <strong id="sum-opportunity">0</strong>
+                    <small>Stock sano con demanda</small>
+                </article>
+            </section>
+
+            <section class="kpi-row">
+                <div class="stat-card gradient-card">
+                    <span class="label">Facturación consolidada</span>
+                    <div class="value" id="kpi-rev">$ 0</div>
+                    <span class="trend">Venta total de la corrida</span>
+                </div>
+                <div class="stat-card urgent">
+                    <span class="label">Venta en riesgo</span>
+                    <div class="value" id="kpi-loss">$ 0</div>
+                    <span class="trend">Impacto mensual estimado por quiebres clase A</span>
+                </div>
+                <div class="stat-card warning">
+                    <span class="label">Capital a liberar</span>
+                    <div class="value" id="kpi-dead">$ 0</div>
+                    <span class="trend">Sobre stock o stock sin rotación</span>
+                </div>
+                <div class="stat-card">
+                    <span class="label">SKUs analizados</span>
+                    <div class="value" id="kpi-skus">0</div>
+                    <span class="trend">Cobertura y forecast en una sola vista</span>
+                </div>
+            </section>
+
+            <section class="action-layout">
+                <div class="card action-center-card panel-span-7">
+                    <div class="section-head">
+                        <div>
+                            <span class="eyebrow">Centro de acción</span>
+                            <h3>Prioridades operativas</h3>
+                        </div>
+                        <span id="focusPill" class="summary-pill">0 focos detectados</span>
+                    </div>
+                    <div class="action-card-grid">
+                        <article class="action-mini-card danger">
+                            <strong>Reposición prioritaria</strong>
+                            <p>Clase A sin stock actual y con impacto comercial inmediato.</p>
+                            <div class="metric" id="action-replenish-count">0 SKUs</div>
+                        </article>
+                        <article class="action-mini-card warning">
+                            <strong>Exceso de cobertura</strong>
+                            <p>Inventario por encima del ritmo de salida esperado.</p>
+                            <div class="metric" id="action-overstock-count">0 SKUs</div>
+                        </article>
+                        <article class="action-mini-card neutral">
+                            <strong>Racionalización de catálogo</strong>
+                            <p>Stock inmóvil o con ventas nulas que conviene depurar.</p>
+                            <div class="metric" id="action-rational-count">0 SKUs</div>
+                        </article>
+                        <article class="action-mini-card danger-soft">
+                            <strong>Clase A en riesgo</strong>
+                            <p>Cobertura menor a 20 días en SKUs de alta participación.</p>
+                            <div class="metric" id="action-risk-count">0 SKUs</div>
+                        </article>
+                        <article class="action-mini-card violet">
+                            <strong>Capital a liberar</strong>
+                            <p>Valor estimado atrapado en stock lento o sin rotación.</p>
+                            <div class="metric" id="action-dead-capital">$ 0</div>
+                        </article>
+                        <article class="action-mini-card success">
+                            <strong>Oportunidad comercial</strong>
+                            <p>SKUs con stock sano y tracción para empujar ventas.</p>
+                            <div class="metric" id="action-opportunity-count">0 SKUs</div>
+                        </article>
+                    </div>
+                </div>
+
+                <div class="card insight-card panel-span-5 insight-primary">
+                    <div class="section-head compact">
+                        <div>
+                            <span class="eyebrow">Alertas críticas</span>
+                            <h4>Comprar ya</h4>
+                        </div>
+                    </div>
+                    <div id="top-quiebres" class="list-grid compact"></div>
+                </div>
+
+                <div class="card chart-card compact-chart-card panel-span-3">
+                    <div class="section-head compact chart-head">
+                        <div>
+                            <span class="eyebrow">Mix del inventario</span>
+                            <h4>Pareto del catálogo</h4>
+                        </div>
+                    </div>
+                    <canvas id="paretoChart"></canvas>
+                </div>
+
+                <div class="card chart-card compact-chart-card panel-span-3">
+                    <div class="section-head compact chart-head">
+                        <div>
+                            <span class="eyebrow">Salud del inventario</span>
+                            <h4>Mapa de cobertura</h4>
+                        </div>
+                    </div>
+                    <canvas id="coverageChart"></canvas>
+                </div>
+
+                <div class="card insight-card panel-span-3 insight-secondary">
+                    <div class="section-head compact">
+                        <div>
+                            <span class="eyebrow">Prevención</span>
+                            <h4>Blindar clase A</h4>
+                        </div>
+                    </div>
+                    <div id="top-risk" class="list-grid compact"></div>
+                </div>
+
+                <div class="card insight-card panel-span-3 insight-secondary">
+                    <div class="section-head compact">
+                        <div>
+                            <span class="eyebrow">Eficiencia</span>
+                            <h4>Congelar compra</h4>
+                        </div>
+                    </div>
+                    <div id="top-overstock" class="list-grid compact"></div>
+                </div>
+            </section>
+
+            <section class="card table-card">
+                <div class="table-head">
+                    <div>
+                        <span class="eyebrow">Detalle operativo</span>
+                        <h3>Detalle de inventario</h3>
+                        <p>Vista filtrable para priorizar reposición, congelamiento y depuración.</p>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table id="mainTable">
+                        <thead>
+                            <tr>
+                                <th>SKU</th>
+                                <th>Producto</th>
+                                <th>Forecast 30d</th>
+                                <th>Stock</th>
+                                <th>Cobertura</th>
+                                <th>Estado</th>
+                                <th>Clase</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody"></tbody>
+                    </table>
+                </div>
+                <div id="emptyState" class="empty-state hidden">
+                    <strong>Sin resultados para esta combinación de filtros</strong>
+                    <p>Ajustá la búsqueda o volvé a vista total para recuperar SKUs.</p>
+                </div>
+            </section>
+        </div>
+    </main>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
