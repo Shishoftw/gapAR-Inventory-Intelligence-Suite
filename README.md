@@ -23,6 +23,5 @@ Al subir hasta 3 meses de reportes históricos de ventas, el motor en JavaScript
 
 ## 🧪 Cómo probarlo
 Dado que la herramienta procesa datos en el navegador, podés probarla sin instalar nada:
-1. Entrá al [Live Demo](LINK_A_TU_GITHUB_PAGES).
-2. Descargá el [Set de Datos de Prueba](./datos_de_prueba) incluido en este repositorio (datos anonimizados).
-3. Subí los archivos a la interfaz y ejecutá el diagnóstico.
+1. Entrá al [🚀 Ver Live Demo](https://shishoftw.github.io/gapAR-Inventory-Intelligence-Suite/).
+2. Subí los archivos a la interfaz y ejecutá el diagnóstico.
